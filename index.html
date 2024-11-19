@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crazy Super Zoom Camera</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+    }
+    video, canvas {
+      max-width: 100%;
+      border: 2px solid #fff;
+      margin: 10px;
+    }
+    .controls {
+      margin-top: 10px;
+    }
+    input[type="range"] {
+      width: 300px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background-color: #28a745;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:active {
+      background-color: #218838;
+    }
+  </style>
+</head>
+<body>
+  <h1>Crazy Super Zoom Camera</h1>
+  <video id="camera" autoplay></video>
+  <canvas id="zoomCanvas"></canvas>
+  <div class="controls">
+    <label for="zoomRange">Zoom: </label>
+    <input id="zoomRange" type="range" min="1" max="1000" value="1">
+  </div>
+  <button id="capture">Capture Photo</button>
+  <script>
+    const video = document.getElementById('camera');
+    const canvas = document.getElementById('zoomCanvas');
+    const zoomRange = document.getElementById('zoomRange');
+    const captureButton = document.getElementById('capture');
+    const ctx = canvas.getContext('2d');
+
+    async function startCamera() {
+      try {
+        // Access back camera
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }
+        });
+        video.srcObject = stream;
+
+        // Update canvas size to match video
+        video.addEventListener('loadedmetadata', () => {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          drawZoomedVideo();
+        });
+      } catch (err) {
+        console.error('Error accessing camera:', err);
+        alert('Unable to access the camera.');
+      }
+    }
+
+    function drawZoomedVideo() {
+      const zoom = zoomRange.value;
+      const zoomWidth = canvas.width / zoom;
+      const zoomHeight = canvas.height / zoom;
+      const offsetX = (canvas.width - zoomWidth) / 2;
+      const offsetY = (canvas.height - zoomHeight) / 2;
+
+      // Draw zoomed video onto canvas
+      ctx.drawImage(video, offsetX, offsetY, zoomWidth, zoomHeight, 0, 0, canvas.width, canvas.height);
+
+      requestAnimationFrame(drawZoomedVideo);
+    }
+
+    zoomRange.addEventListener('input', () => {
+      drawZoomedVideo();
+    });
+
+    captureButton.addEventListener('click', () => {
+      // Capture current canvas view as an image
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.href = dataUrl;
+      link.download = 'crazy_zoom_photo.png';
+      link.click();
+    });
+
+    // Start the camera on page load
+    startCamera();
+  </script>
+</body>
+</html>
